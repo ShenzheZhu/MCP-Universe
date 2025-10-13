@@ -18,6 +18,7 @@ import uvicorn
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from starlette.routing import Mount, Route
 from starlette.applications import Starlette
+from starlette.responses import Response
 from mcp.client.sse import sse_client
 from mcp.server.sse import SseServerTransport
 from mcp import stdio_client, StdioServerParameters
@@ -263,12 +264,11 @@ class Gateway(metaclass=AutodocABCMeta):
 
         async def handle_sse(request):
             connector = ServerConnector()
-            async with sse.connect_sse(
-                    request.scope, request.receive, request._send
-            ) as streams:
+            async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
                 await connector.connect_to_sse_server(self._processes[server_name]["url"])
                 await connector.run(streams[0], streams[1])
                 await connector.cleanup()
+            return Response()
 
         routes = [
             Route(f"/{server_name}/sse", endpoint=handle_sse),
@@ -290,12 +290,11 @@ class Gateway(metaclass=AutodocABCMeta):
 
         async def handle_sse(request):
             connector = ServerConnector()
-            async with sse.connect_sse(
-                    request.scope, request.receive, request._send
-            ) as streams:
+            async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
                 await connector.connect_to_stdio_server(config)
                 await connector.run(streams[0], streams[1])
                 await connector.cleanup()
+            return Response()
 
         routes = [
             Route(f"/{server_name}/sse", endpoint=handle_sse),
